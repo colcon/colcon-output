@@ -44,7 +44,7 @@ class ConsoleStderrEventHandler(EventHandlerExtensionPoint):
             if self._stderr_lines[job]:
                 msg = '--- stderr: {data.identifier}\n' \
                     .format_map(locals()) + \
-                    b' '.join(
+                    b''.join(
                         self._stderr_lines[job]).decode() + \
                     '---'
                 print(msg, file=sys.stderr, flush=True)
