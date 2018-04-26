@@ -106,7 +106,7 @@ class LogEventHandler(EventHandlerExtensionPoint):
             return
         self._jobs.add(job)
 
-        create_log_path()
+        create_log_path(self.context.args.verb_name)
         base_path = get_log_directory(job)
         os.makedirs(str(base_path), exist_ok=True)
         for filename in all_log_filenames:

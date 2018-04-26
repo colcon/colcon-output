@@ -50,7 +50,7 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
         if self._path is not None:
             return
 
-        create_log_path()
+        create_log_path(self.context.args.verb_name)
         self._path = get_log_path() / EventLogEventHandler.FILENAME
         with self._path.open(mode='w'):
             pass
