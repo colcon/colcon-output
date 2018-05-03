@@ -6,6 +6,7 @@ import time
 from colcon_core.event.job import JobEnded
 from colcon_core.event.job import JobQueued
 from colcon_core.event.output import StderrLine
+from colcon_core.event.test import TestFailure
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.event_reactor import EventReactorShutdown
 from colcon_core.plugin_system import satisfies_version
@@ -20,6 +21,7 @@ class SummaryHandler(EventHandlerExtensionPoint):
     - :py:class:`colcon_core.event.output.StderrLine`
     - :py:class:`colcon_core.event.job.JobEnded`
     - :py:class:`colcon_core.event.job.JobQueued`
+    - :py:class:`colcon_core.event.test.TestFailure`
     - :py:class:`colcon_core.event_reactor.EventReactorShutdown`
     """
 
@@ -33,6 +35,7 @@ class SummaryHandler(EventHandlerExtensionPoint):
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self._queued = set()
         self._with_stderr = set()
+        self._with_test_failures = set()
         self._ended = set()
         self._failed = set()
         self._interrupted = set()
@@ -47,6 +50,9 @@ class SummaryHandler(EventHandlerExtensionPoint):
         elif isinstance(data, StderrLine):
             job = event[1]
             self._with_stderr.add(job)
+        elif isinstance(data, TestFailure):
+            job = event[1]
+            self._with_test_failures.add(job)
         elif isinstance(data, JobEnded):
             job = event[1]
             self._ended.add(job)
@@ -82,6 +88,13 @@ class SummaryHandler(EventHandlerExtensionPoint):
             count, plural_suffix, names = _msg_arguments(self._with_stderr)
             print(
                 '  {count} package{plural_suffix} had stderr output: {names}'
+                .format_map(locals()))
+
+        if self._with_test_failures:
+            count, plural_suffix, names = _msg_arguments(
+                self._with_test_failures)
+            print(
+                '  {count} package{plural_suffix} had test failures: {names}'
                 .format_map(locals()))
 
         if len(self._queued) > len(self._ended):
