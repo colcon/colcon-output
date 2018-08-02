@@ -8,6 +8,7 @@ from colcon_core.event.job import JobQueued
 from colcon_core.event.output import StderrLine
 from colcon_core.event.test import TestFailure
 from colcon_core.event_handler import EventHandlerExtensionPoint
+from colcon_core.event_handler import format_duration
 from colcon_core.event_reactor import EventReactorShutdown
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.subprocess import SIGINT_RESULT
@@ -68,11 +69,12 @@ class SummaryHandler(EventHandlerExtensionPoint):
         print()
 
         duration = time.time() - self._start_time
+        duration_string = format_duration(duration)
 
         count, plural_suffix, _ = _msg_arguments(
             self._ended - self._interrupted - self._failed)
         print('Summary: {count} package{plural_suffix} finished '
-              '[{duration:.2f}s]'.format_map(locals()))
+              '[{duration_string}]'.format_map(locals()))
 
         if self._failed:
             count, plural_suffix, names = _msg_arguments(self._failed)
