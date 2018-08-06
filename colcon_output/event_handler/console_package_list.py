@@ -34,7 +34,7 @@ class ConsolePackageListEventHandler(EventHandlerExtensionPoint):
                 print('Topological order')
                 for job in self._queued:
                     print(
-                        '- {job} ({job._task_context.pkg.type})'
+                        '- {job} ({job.task_context.pkg.type})'
                         .format_map(locals()))
                 # clear the list to only print the order once
                 self._queued = []
