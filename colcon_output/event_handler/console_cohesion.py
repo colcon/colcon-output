@@ -1,6 +1,8 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import locale
+
 from colcon_core.event.job import JobEnded
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
@@ -45,8 +47,14 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
             base_path = get_log_directory(job)
             if not (base_path / STDOUT_STDERR_LOG_FILENAME).exists():
                 return
-            with (base_path / STDOUT_STDERR_LOG_FILENAME).open(mode='r') as h:
+
+            # ensure that output is printable on the console
+            encoding = locale.getpreferredencoding()
+            with (base_path / STDOUT_STDERR_LOG_FILENAME).open(
+                mode='r', encoding=encoding, errors='replace'
+            ) as h:
                 content = h.read()
+
             msg = '--- output: {data.identifier}\n'.format_map(locals()) + \
                 content + \
                 '---'
