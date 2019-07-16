@@ -40,7 +40,7 @@ class SummaryHandler(EventHandlerExtensionPoint):
         self._ended = set()
         self._failed = set()
         self._interrupted = set()
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
@@ -68,7 +68,7 @@ class SummaryHandler(EventHandlerExtensionPoint):
         # separate the summary from the previous output
         print()
 
-        duration = time.time() - self._start_time
+        duration = time.monotonic() - self._start_time
         duration_string = format_duration(duration)
 
         count, plural_suffix, _ = _msg_arguments(

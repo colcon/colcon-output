@@ -56,7 +56,7 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
             pass
 
     def _get_relative_time(self):
-        now = time.time()
+        now = time.monotonic()
         if self._start_time is None:
             self._start_time = now
             return 0
