@@ -4,6 +4,7 @@
 import time
 
 from colcon_core.event_handler import EventHandlerExtensionPoint
+from colcon_core.event_reactor import EventReactorShutdown
 from colcon_core.location import create_log_path
 from colcon_core.location import get_log_path
 from colcon_core.plugin_system import satisfies_version
@@ -26,7 +27,7 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
         super().__init__()
         satisfies_version(
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
-        self._path = None
+        self._file_handle = None
         self._start_time = None
 
     def __call__(self, event):  # noqa: D102
@@ -39,21 +40,23 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
             members = data.__dict__
         except AttributeError:
             members = {s: getattr(data, s) for s in data.__slots__}
-        with self._path.open(mode='a') as h:
-            h.write(
-                '[%f] (%s) %s: %s\n' % (
-                    self._get_relative_time(), context,
-                    data.__class__.__name__, members))
+        self._file_handle.write(
+            '[%f] (%s) %s: %s\n' % (
+                self._get_relative_time(), context,
+                data.__class__.__name__, members))
+        self._file_handle.flush()
+
+        if isinstance(data, EventReactorShutdown):
+            self._file_handle.close()
 
     def _init_log(self):
         # only create log once
-        if self._path is not None:
+        if self._file_handle is not None:
             return
 
         create_log_path(self.context.args.verb_name)
-        self._path = get_log_path() / EventLogEventHandler.FILENAME
-        with self._path.open(mode='w'):
-            pass
+        path = get_log_path() / EventLogEventHandler.FILENAME
+        self._file_handle = path.open(mode='w')
 
     def _get_relative_time(self):
         now = time.monotonic()

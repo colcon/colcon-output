@@ -2,9 +2,11 @@
 # Licensed under the Apache License, Version 2.0
 
 import copy
+import locale
 import os
 
 from colcon_core.event.command import Command
+from colcon_core.event.job import JobEnded
 from colcon_core.event.output import StderrLine
 from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
@@ -45,6 +47,7 @@ class LogEventHandler(EventHandlerExtensionPoint):
 
     The extension handles events of the following types:
     - :py:class:`colcon_core.event.command.Command`
+    - :py:class:`colcon_core.event.job.JobEnded`
     - :py:class:`colcon_core.event.output.StdoutLine`
     - :py:class:`colcon_core.event.output.StderrLine`
     """
@@ -58,10 +61,20 @@ class LogEventHandler(EventHandlerExtensionPoint):
         satisfies_version(
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self._jobs = set()
+        self._file_handles = {}
 
     def __call__(self, event):  # noqa: D102
         global all_log_filenames
         data = event[0]
+        job = event[1]
+
+        if isinstance(data, JobEnded):
+            base_path = get_log_directory(job)
+            for filename in all_log_filenames:
+                path = base_path / filename
+                if path in self._file_handles:
+                    self._file_handles[path].close()
+            return
 
         filenames = copy.copy(all_log_filenames)
         if not isinstance(data, Command):
@@ -84,17 +97,17 @@ class LogEventHandler(EventHandlerExtensionPoint):
         else:
             line = data.line
 
-        job = event[1]
         self._init_logs(job)
 
-        mode = 'a'
-        if isinstance(line, bytes):
-            mode += 'b'
+        if not isinstance(line, bytes):
+            # use the same encoding as the default for the opened file handle
+            line = line.encode(encoding=locale.getpreferredencoding(False))
 
         base_path = get_log_directory(job)
         for filename in filenames:
-            with (base_path / filename).open(mode=mode) as h:
-                h.write(line)
+            h = self._file_handles[base_path / filename]
+            h.write(line)
+            h.flush()
 
     def _init_logs(self, job):
         global all_log_filenames
@@ -110,8 +123,8 @@ class LogEventHandler(EventHandlerExtensionPoint):
         base_path = get_log_directory(job)
         os.makedirs(str(base_path), exist_ok=True)
         for filename in all_log_filenames:
-            with (base_path / filename).open(mode='w'):
-                pass
+            path = base_path / filename
+            self._file_handles[path] = path.open(mode='wb')
 
 
 def get_log_directory(job):
