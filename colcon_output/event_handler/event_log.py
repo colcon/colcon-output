@@ -33,7 +33,8 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
     def __call__(self, event):  # noqa: D102
         data = event[0]
 
-        self._init_log()
+        if not self._init_log():
+            return
 
         context = str(event[1]) if event[1] is not None else '-'
         try:
@@ -52,11 +53,16 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
     def _init_log(self):
         # only create log once
         if self._file_handle is not None:
-            return
+            return True
+
+        log_path = get_log_path()
+        if log_path is None:
+            return False
 
         create_log_path(self.context.args.verb_name)
-        path = get_log_path() / EventLogEventHandler.FILENAME
+        path = log_path / EventLogEventHandler.FILENAME
         self._file_handle = path.open(mode='w')
+        return True
 
     def _get_relative_time(self):
         now = time.monotonic()
