@@ -92,12 +92,13 @@ class LogEventHandler(EventHandlerExtensionPoint):
             # skip if event is neither of the known events
             return
 
+        if not self._init_logs(job):
+            return
+
         if isinstance(data, Command):
             line = data.to_string() + '\n'
         else:
             line = data.line
-
-        self._init_logs(job)
 
         if not isinstance(line, bytes):
             # use the same encoding as the default for the opened file handle
@@ -111,12 +112,14 @@ class LogEventHandler(EventHandlerExtensionPoint):
 
     def _init_logs(self, job):
         global all_log_filenames
-        # skip job agnostic events
-        if job is None:
-            return
         # only create logs once per task
         if job in self._jobs:
-            return
+            return True
+
+        log_path = get_log_path()
+        if log_path is None:
+            return False
+
         self._jobs.add(job)
 
         create_log_path(self.context.args.verb_name)
@@ -125,6 +128,7 @@ class LogEventHandler(EventHandlerExtensionPoint):
         for filename in all_log_filenames:
             path = base_path / filename
             self._file_handles[path] = path.open(mode='wb')
+        return True
 
 
 def get_log_directory(job):
