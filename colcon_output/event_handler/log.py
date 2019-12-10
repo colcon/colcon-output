@@ -4,9 +4,11 @@
 import copy
 import locale
 import os
+import time
 
 from colcon_core.event.command import Command
 from colcon_core.event.job import JobEnded
+from colcon_core.event.job import JobStarted
 from colcon_core.event.output import StderrLine
 from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
@@ -47,6 +49,7 @@ class LogEventHandler(EventHandlerExtensionPoint):
 
     The extension handles events of the following types:
     - :py:class:`colcon_core.event.command.Command`
+    - :py:class:`colcon_core.event.job.JobStarted`
     - :py:class:`colcon_core.event.job.JobEnded`
     - :py:class:`colcon_core.event.output.StdoutLine`
     - :py:class:`colcon_core.event.output.StderrLine`
@@ -62,11 +65,15 @@ class LogEventHandler(EventHandlerExtensionPoint):
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self._jobs = set()
         self._file_handles = {}
+        self._start_times = {}
 
     def __call__(self, event):  # noqa: D102
         global all_log_filenames
         data = event[0]
         job = event[1]
+
+        if isinstance(data, JobStarted):
+            self._start_times[job] = time.monotonic()
 
         if isinstance(data, JobEnded):
             base_path = get_log_directory(job)
@@ -103,6 +110,13 @@ class LogEventHandler(EventHandlerExtensionPoint):
         if not isinstance(line, bytes):
             # use the same encoding as the default for the opened file handle
             line = line.encode(encoding=locale.getpreferredencoding(False))
+
+        # prefix line with relative time
+        relative_time = time.monotonic() - self._start_times[job]
+        # use the same encoding as the default for the opened file handle
+        prefix = ('[%.3fs] ' % relative_time).encode(
+            encoding=locale.getpreferredencoding(False))
+        line = prefix + line
 
         base_path = get_log_directory(job)
         for filename in filenames:
