@@ -8,6 +8,7 @@ from colcon_core.event.job import JobEnded
 from colcon_core.event.output import StderrLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
+from colcon_core.subprocess import SIGINT_RESULT
 
 
 class ConsoleStderrEventHandler(EventHandlerExtensionPoint):
@@ -16,6 +17,7 @@ class ConsoleStderrEventHandler(EventHandlerExtensionPoint):
 
     The output is batched up until the task has ended in order to not
     interleave the output from parallel tasks.
+    When the task was aborted / exited with a SIGINT no output is shown.
 
     The extension handles events of the following types:
     - :py:class:`colcon_core.event.output.StderrLine`
@@ -41,7 +43,7 @@ class ConsoleStderrEventHandler(EventHandlerExtensionPoint):
 
         elif isinstance(data, JobEnded):
             job = event[1]
-            if self._stderr_lines[job]:
+            if self._stderr_lines[job] and data.rc != SIGINT_RESULT:
                 msg = '--- stderr: {data.identifier}\n' \
                     .format_map(locals()) + \
                     b''.join(
