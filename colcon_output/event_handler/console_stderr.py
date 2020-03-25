@@ -50,3 +50,4 @@ class ConsoleStderrEventHandler(EventHandlerExtensionPoint):
                         self._stderr_lines[job]).decode() + \
                     '---'
                 print(msg, file=sys.stderr, flush=True)
+                del self._stderr_lines[job]
