@@ -1,13 +1,14 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
-import locale
+from collections import defaultdict
 
 from colcon_core.event.job import JobEnded
+from colcon_core.event.output import StderrLine
+from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
-from colcon_output.event_handler.log import get_log_directory
-from colcon_output.event_handler.log import STDOUT_STDERR_LOG_FILENAME
+from colcon_core.subprocess import SIGINT_RESULT
 
 
 class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
@@ -25,8 +26,6 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
     # but other handlers might choose to change that presetting
     ENABLED_BY_DEFAULT = False
 
-    # the priority should be lower than the `log` handler
-    # since it reads the log file written by that extension
     # the priority should be higher than the `console_stderr` handler
     # in order for the `stderr` output to appear below the combined output
     PRIORITY = 130
@@ -36,26 +35,22 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
         satisfies_version(
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self.enabled = ConsoleCohesionEventHandler.ENABLED_BY_DEFAULT
+        self._lines = defaultdict(list)
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
 
-        # instead of buffering all output in memory
-        # read the combined log file written by the `log` event handler
-        if isinstance(data, JobEnded):
+        if isinstance(data, (StdoutLine, StderrLine)):
             job = event[1]
-            base_path = get_log_directory(job)
-            if not (base_path / STDOUT_STDERR_LOG_FILENAME).exists():
-                return
+            self._lines[job].append(data.line)
 
-            # ensure that output is printable on the console
-            encoding = locale.getpreferredencoding()
-            with (base_path / STDOUT_STDERR_LOG_FILENAME).open(
-                mode='r', encoding=encoding, errors='replace'
-            ) as h:
-                content = h.read()
-
-            msg = '--- output: {data.identifier}\n'.format_map(locals()) + \
-                content + \
-                '---'
-            print(msg, flush=True)
+        elif isinstance(data, JobEnded):
+            job = event[1]
+            if self._lines[job] and data.rc != SIGINT_RESULT:
+                msg = '--- output: {data.identifier}\n' \
+                    .format_map(locals()) + \
+                    b''.join(
+                        self._lines[job]).decode() + \
+                    '---'
+                print(msg, flush=True)
+                del self._lines[job]
