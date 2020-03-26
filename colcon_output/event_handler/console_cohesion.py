@@ -40,7 +40,7 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
     def __call__(self, event):  # noqa: D102
         data = event[0]
 
-        if isinstance(data, StdoutLine):
+        if isinstance(data, (StdoutLine, StderrLine)):
             job = event[1]
             self._lines[job].append(data.line)
 
