@@ -44,10 +44,6 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
             job = event[1]
             self._lines[job].append(data.line)
 
-        elif isinstance(data, StderrLine):
-            job = event[1]
-            self._lines[job].append(data.line)
-
         elif isinstance(data, JobEnded):
             job = event[1]
             if self._lines[job] and data.rc != SIGINT_RESULT:
