@@ -1,6 +1,7 @@
 apache
 colcon
 defaultdict
+enospc
 getpreferredencoding
 iterdir
 noqa
@@ -11,4 +12,5 @@ rtype
 scspell
 setuptools
 sigint
+stacktrace
 thomas

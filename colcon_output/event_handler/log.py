@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import copy
+import errno
 import locale
 import os
 import time
@@ -122,7 +123,15 @@ class LogEventHandler(EventHandlerExtensionPoint):
         for filename in filenames:
             h = self._file_handles[base_path / filename]
             h.write(line)
-            h.flush()
+            try:
+                h.flush()
+            except OSError as e:
+                if e.errno == errno.ENOSPC:
+                    # for known error code suppress the stacktrace
+                    # and only show the exception message
+                    raise RuntimeError(
+                        str(e) + ' [{h.name}]'.format_map(locals()))
+                raise
 
     def _init_logs(self, job):
         global all_log_filenames
