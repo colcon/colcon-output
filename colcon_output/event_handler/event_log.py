@@ -1,6 +1,7 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import errno
 import time
 
 from colcon_core.event_handler import EventHandlerExtensionPoint
@@ -45,7 +46,16 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
             '[%f] (%s) %s: %s\n' % (
                 self._get_relative_time(), context,
                 data.__class__.__name__, members))
-        self._file_handle.flush()
+        try:
+            self._file_handle.flush()
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                # for known error code suppress the stacktrace
+                # and only show the exception message
+                raise RuntimeError(
+                    str(e) +
+                    ' [{self._file_handle.name}]'.format_map(locals()))
+            raise
 
         if isinstance(data, EventReactorShutdown):
             self._file_handle.close()
