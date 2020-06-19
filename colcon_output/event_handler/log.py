@@ -109,19 +109,21 @@ class LogEventHandler(EventHandlerExtensionPoint):
             line = data.line
 
         if not isinstance(line, bytes):
-            # use the same encoding as the default for the opened file handle
+            # use the same encoding as the default for the opened file
             line = line.encode(encoding=locale.getpreferredencoding(False))
-
-        # prefix line with relative time
-        relative_time = time.monotonic() - self._start_times[job]
-        # use the same encoding as the default for the opened file handle
-        prefix = ('[%.3fs] ' % relative_time).encode(
-            encoding=locale.getpreferredencoding(False))
-        line = prefix + line
 
         base_path = get_log_directory(job)
         for filename in filenames:
             h = self._file_handles[base_path / filename]
+
+            if filename == ALL_STREAMS_LOG_FILENAME:
+                # prefix line with relative time
+                relative_time = time.monotonic() - self._start_times[job]
+                # use the same encoding as the default for the opened file
+                prefix = ('[%.3fs] ' % relative_time).encode(
+                    encoding=locale.getpreferredencoding(False))
+                h.write(prefix)
+
             h.write(line)
             try:
                 h.flush()
