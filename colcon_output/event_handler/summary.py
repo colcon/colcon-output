@@ -71,45 +71,58 @@ class SummaryHandler(EventHandlerExtensionPoint):
         duration = time.monotonic() - self._start_time
         duration_string = format_duration(duration)
 
-        count, plural_suffix, _ = _msg_arguments(
+        count, job_type, _ = _msg_arguments(
             self._ended - self._interrupted - self._failed)
-        print('Summary: {count} package{plural_suffix} finished '
+        print('Summary: {count} {job_type} finished '
               '[{duration_string}]'.format_map(locals()))
 
         if self._failed:
-            count, plural_suffix, names = _msg_arguments(self._failed)
-            print('  {count} package{plural_suffix} failed: {names}'
+            count, job_type, names = _msg_arguments(self._failed)
+            print('  {count} {job_type} failed: {names}'
                   .format_map(locals()))
 
         if self._interrupted:
-            count, plural_suffix, names = _msg_arguments(self._interrupted)
-            print('  {count} package{plural_suffix} aborted: {names}'
+            count, job_type, names = _msg_arguments(self._interrupted)
+            print('  {count} {job_type} aborted: {names}'
                   .format_map(locals()))
 
         if self._with_stderr:
-            count, plural_suffix, names = _msg_arguments(self._with_stderr)
+            count, job_type, names = _msg_arguments(self._with_stderr)
             print(
-                '  {count} package{plural_suffix} had stderr output: {names}'
+                '  {count} {job_type} had stderr output: {names}'
                 .format_map(locals()))
 
         if self._with_test_failures:
-            count, plural_suffix, names = _msg_arguments(
+            count, job_type, names = _msg_arguments(
                 self._with_test_failures)
             print(
-                '  {count} package{plural_suffix} had test failures: {names}'
+                '  {count} {job_type} had test failures: {names}'
                 .format_map(locals()))
 
         if len(self._queued) > len(self._ended):
             count = len(self._queued - self._ended)
-            plural_suffix = 's' if count != 1 else ''
+            job_type = get_job_type_word_form(count)
             print(
-                '  {count} package{plural_suffix} not processed'
+                '  {count} {job_type} not processed'
                 .format_map(locals()))
 
 
 def _msg_arguments(jobs):
     return (
         len(jobs),
-        's' if len(jobs) != 1 else '',
+        get_job_type_word_form(len(jobs)),
         ' '.join(sorted(j.task.context.pkg.name for j in jobs)),
     )
+
+
+def get_job_type_word_form(job_count):
+    """
+    Get the singular / plural word form of a job type.
+
+    While this function only returns "package" or "packages" it allows external
+    code to replace the function with custom logic.
+
+    :param job_count: The number of jobs
+    :rtype: str
+    """
+    return 'package' if job_count == 1 else 'packages'
