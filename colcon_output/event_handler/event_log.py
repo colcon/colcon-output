@@ -59,6 +59,7 @@ class EventLogEventHandler(EventHandlerExtensionPoint):
 
         if isinstance(data, EventReactorShutdown):
             self._file_handle.close()
+            self._file_handle = None
 
     def _init_log(self):
         # only create log once
