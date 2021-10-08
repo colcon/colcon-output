@@ -77,6 +77,9 @@ class LogEventHandler(EventHandlerExtensionPoint):
             self._start_times[job] = time.monotonic()
 
         if isinstance(data, JobEnded):
+            # Skip if the log path is /dev/null
+            if get_log_path() is None:
+                return
             base_path = get_log_directory(job)
             for filename in all_log_filenames:
                 path = base_path / filename
