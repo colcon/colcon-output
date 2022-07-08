@@ -166,4 +166,7 @@ def get_log_directory(job):
     :param job: The job
     :rtype: Path
     """
-    return get_log_path() / job.identifier
+    log_path = get_log_path()
+    if log_path is None or job.identifier is None:
+        return None
+    return log_path / job.identifier
