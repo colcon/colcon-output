@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import copy
+from email.mime import base
 import errno
 import locale
 import os
@@ -77,10 +78,13 @@ class LogEventHandler(EventHandlerExtensionPoint):
             self._start_times[job] = time.monotonic()
 
         if isinstance(data, JobEnded):
-            # Skip if the log path is /dev/null
+            # Skip if the log path is /dev/null and/or is unable to get directory
             if get_log_path() is None:
                 return
             base_path = get_log_directory(job)
+            if base_path is None:
+                return
+
             for filename in all_log_filenames:
                 path = base_path / filename
                 if path in self._file_handles:
@@ -115,7 +119,11 @@ class LogEventHandler(EventHandlerExtensionPoint):
             # use the same encoding as the default for the opened file
             line = line.encode(encoding=locale.getpreferredencoding(False))
 
+        # Get base path, and return if fails
         base_path = get_log_directory(job)
+        if base_path is None:
+            return
+
         for filename in filenames:
             h = self._file_handles[base_path / filename]
 
@@ -151,7 +159,13 @@ class LogEventHandler(EventHandlerExtensionPoint):
         self._jobs.add(job)
 
         create_log_path(self.context.args.verb_name)
+
+        # Get directory and return false if fails
+        # (this is redundant with previous get_log_path call, but just in case)
         base_path = get_log_directory(job)
+        if base_path is None:
+            return False
+
         os.makedirs(str(base_path), exist_ok=True)
         for filename in all_log_filenames:
             path = base_path / filename
