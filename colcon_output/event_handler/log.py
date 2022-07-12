@@ -2,7 +2,6 @@
 # Licensed under the Apache License, Version 2.0
 
 import copy
-from email.mime import base
 import errno
 import locale
 import os
@@ -78,7 +77,8 @@ class LogEventHandler(EventHandlerExtensionPoint):
             self._start_times[job] = time.monotonic()
 
         if isinstance(data, JobEnded):
-            # Skip if the log path is /dev/null and/or is unable to get directory
+            # Skip if the log path is /dev/null
+            # and/or is unable to get directory
             if get_log_path() is None:
                 return
             base_path = get_log_directory(job)
