@@ -78,9 +78,7 @@ class LogEventHandler(EventHandlerExtensionPoint):
 
         if isinstance(data, JobEnded):
             # Skip if the log path is /dev/null
-            # and/or is unable to get directory
-            if get_log_path() is None:
-                return
+            # => is unable to get directory
             base_path = get_log_directory(job)
             if base_path is None:
                 return
@@ -152,19 +150,16 @@ class LogEventHandler(EventHandlerExtensionPoint):
         if job in self._jobs:
             return True
 
-        log_path = get_log_path()
-        if log_path is None:
+        # Get directory
+        # If this fails, the log directory is /dev/null
+        # so function must return with negative result
+        base_path = get_log_directory(job)
+        if base_path is None:
             return False
 
         self._jobs.add(job)
 
         create_log_path(self.context.args.verb_name)
-
-        # Get directory and return false if fails
-        # (this is redundant with previous get_log_path call, but just in case)
-        base_path = get_log_directory(job)
-        if base_path is None:
-            return False
 
         os.makedirs(str(base_path), exist_ok=True)
         for filename in all_log_filenames:
@@ -181,6 +176,6 @@ def get_log_directory(job):
     :rtype: Path
     """
     log_path = get_log_path()
-    if log_path is None or job.identifier is None:
+    if log_path is None:
         return None
     return log_path / job.identifier
