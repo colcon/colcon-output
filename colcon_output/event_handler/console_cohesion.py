@@ -40,9 +40,9 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
         self.encoding = self.get_encoding()
 
     def get_encoding(self):
-        if sys.platform == "win32":
-            return subprocess.getoutput("chcp").replace("Active code page: ", "")
-        return "utf-8"
+        if sys.platform == 'win32':
+            return subprocess.getoutput('chcp').replace('Active code page: ', '')
+        return 'utf-8'
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
