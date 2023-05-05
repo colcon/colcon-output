@@ -9,6 +9,7 @@ from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.subprocess import SIGINT_RESULT
+import subprocess, sys
 
 
 class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
@@ -36,6 +37,12 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self.enabled = ConsoleCohesionEventHandler.ENABLED_BY_DEFAULT
         self._lines = defaultdict(list)
+        self.encoding = self.get_encoding()
+
+    def get_encoding(self):
+        if sys.platform == "win32":
+            return subprocess.getoutput("chcp").replace("Active code page: ", "")
+        return "utf-8"
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
@@ -50,7 +57,7 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
                 msg = '--- output: {data.identifier}\n' \
                     .format_map(locals()) + \
                     b''.join(
-                        self._lines[job]).decode() + \
+                        self._lines[job]).decode(encoding=self.encoding) + \
                     '---'
                 print(msg, flush=True)
                 del self._lines[job]
