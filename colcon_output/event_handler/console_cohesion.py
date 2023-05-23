@@ -9,7 +9,7 @@ from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.subprocess import SIGINT_RESULT
-import subprocess, sys
+import subprocess, sys, re
 
 
 class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
@@ -40,9 +40,15 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
         self.encoding = self.get_encoding()
 
     def get_encoding(self):
-        if sys.platform == 'win32':
-            return subprocess.getoutput('chcp').replace('Active code page: ', '')
-        return 'utf-8'
+        default_encoding = 'utf-8'
+        if sys.platform == 'win32': # handling non-utf-8 code page
+            chcp_out = subprocess.getoutput('chcp')
+            regex = re.search(r'.+: (.+)', chcp_out)
+            if regex is not None and len(regex.groups()) == 1:
+                return regex.group(1)
+            print("Unknown Windows code page, fallback to utf-8!")
+            return default_encoding
+        return default_encoding
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
