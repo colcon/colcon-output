@@ -46,7 +46,7 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
             regex = re.search(r'.+: (.+)', chcp_out)
             if regex is not None and len(regex.groups()) == 1:
                 return regex.group(1)
-            print('Unknown Windows code page, fallback to utf-8!')
+            print(f'Unknown Windows code page, fallback to {default_encoding}!')
             return default_encoding
         return default_encoding
 
