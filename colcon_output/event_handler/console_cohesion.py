@@ -1,6 +1,7 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import sys
 from collections import defaultdict
 
 from colcon_core.event.job import JobEnded
@@ -9,7 +10,6 @@ from colcon_core.event.output import StdoutLine
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.subprocess import SIGINT_RESULT
-import subprocess, sys, re
 
 
 class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
@@ -40,15 +40,10 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
         self.encoding = self.get_encoding()
 
     def get_encoding(self):
-        default_encoding = 'utf-8'
-        if sys.platform == 'win32': # handling non-utf-8 code page
-            chcp_out = subprocess.getoutput('chcp')
-            regex = re.search(r'.+: (.+)', chcp_out)
-            if regex is not None and len(regex.groups()) == 1:
-                return regex.group(1)
-            print(f'Unknown Windows code page, fallback to {default_encoding}!')
-            return default_encoding
-        return default_encoding
+        if sys.platform == 'win32':
+            from ctypes import windll
+            return str(windll.kernel32.GetConsoleOutputCP())
+        return 'utf-8'
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
