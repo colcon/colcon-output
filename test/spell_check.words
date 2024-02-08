@@ -4,9 +4,11 @@ defaultdict
 enospc
 getpreferredencoding
 iterdir
+linter
 noqa
 pathlib
 plugin
+pydocstyle
 pytest
 rtype
 scspell
