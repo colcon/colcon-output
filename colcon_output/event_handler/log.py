@@ -69,7 +69,6 @@ class LogEventHandler(EventHandlerExtensionPoint):
         self._start_times = {}
 
     def __call__(self, event):  # noqa: D102
-        global all_log_filenames
         data = event[0]
         job = event[1]
 
@@ -145,7 +144,6 @@ class LogEventHandler(EventHandlerExtensionPoint):
                 raise
 
     def _init_logs(self, job):
-        global all_log_filenames
         # only create logs once per task
         if job in self._jobs:
             return True
