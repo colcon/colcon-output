@@ -3,6 +3,8 @@
 
 import time
 
+import colorama
+
 from colcon_core.event.job import JobEnded
 from colcon_core.event.job import JobQueued
 from colcon_core.event.output import StderrLine
@@ -32,6 +34,7 @@ class SummaryHandler(EventHandlerExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
+        colorama.init()
         satisfies_version(
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self._queued = set()
@@ -73,38 +76,43 @@ class SummaryHandler(EventHandlerExtensionPoint):
 
         count, job_type, _ = _msg_arguments(
             self._ended - self._interrupted - self._failed)
-        print('Summary: {count} {job_type} finished '
-              '[{duration_string}]'.format_map(locals()))
+        print(colorama.Fore.YELLOW + colorama.Style.BRIGHT + 'Summary: ' +
+              colorama.Fore.RESET + str(count) + colorama.Style.NORMAL + ' ' +
+              job_type + ' finished [' + colorama.Fore.YELLOW +
+              duration_string + colorama.Fore.RESET + ']')
 
         if self._failed:
             count, job_type, names = _msg_arguments(self._failed)
-            print('  {count} {job_type} failed: {names}'
-                  .format_map(locals()))
+            print(colorama.Fore.RED +
+                  '  {count} {job_type} failed: '.format_map(locals()) +
+                  colorama.Style.RESET_ALL + names)
 
         if self._interrupted:
             count, job_type, names = _msg_arguments(self._interrupted)
-            print('  {count} {job_type} aborted: {names}'
-                  .format_map(locals()))
+            print(colorama.Fore.RED +
+                  '  {count} {job_type} aborted: '.format_map(locals()) +
+                  colorama.Style.RESET_ALL + names)
 
         if self._with_stderr:
             count, job_type, names = _msg_arguments(self._with_stderr)
-            print(
-                '  {count} {job_type} had stderr output: {names}'
-                .format_map(locals()))
+            print(colorama.Fore.YELLOW +
+                  '  {count} {job_type} had stderr output: '
+                  .format_map(locals()) +
+                  colorama.Style.RESET_ALL + names)
 
         if self._with_test_failures:
             count, job_type, names = _msg_arguments(
                 self._with_test_failures)
-            print(
-                '  {count} {job_type} had test failures: {names}'
-                .format_map(locals()))
+            print(colorama.Fore.RED +
+                  '  {count} {job_type} had test failures: '
+                  .format_map(locals()) +
+                  colorama.Style.RESET_ALL + names)
 
         if len(self._queued) > len(self._ended):
             count = len(self._queued - self._ended)
             job_type = get_job_type_word_form(count)
-            print(
-                '  {count} {job_type} not processed'
-                .format_map(locals()))
+            print(colorama.Fore.BLACK + '  {count} {job_type} not processed'
+                  .format_map(locals()) + colorama.Style.RESET_ALL)
 
 
 def _msg_arguments(jobs):
