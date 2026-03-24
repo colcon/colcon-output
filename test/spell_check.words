@@ -1,4 +1,5 @@
 apache
+capsys
 colcon
 defaultdict
 enospc
@@ -10,9 +11,11 @@ pathlib
 plugin
 pydocstyle
 pytest
+readouterr
 rtype
 scspell
 setuptools
 sigint
 stacktrace
 thomas
+unittest
