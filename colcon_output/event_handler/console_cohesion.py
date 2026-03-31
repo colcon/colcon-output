@@ -1,6 +1,7 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import sys
 from collections import defaultdict
 
 from colcon_core.event.job import JobEnded
@@ -36,6 +37,13 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self.enabled = ConsoleCohesionEventHandler.ENABLED_BY_DEFAULT
         self._lines = defaultdict(list)
+        self.encoding = self.get_encoding()
+
+    def get_encoding(self):
+        if sys.platform == 'win32':
+            from ctypes import windll
+            return str(windll.kernel32.GetConsoleOutputCP())
+        return 'utf-8'
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
@@ -50,7 +58,7 @@ class ConsoleCohesionEventHandler(EventHandlerExtensionPoint):
                 msg = '--- output: {data.identifier}\n' \
                     .format_map(locals()) + \
                     b''.join(
-                        self._lines[job]).decode() + \
+                        self._lines[job]).decode(encoding=self.encoding) + \
                     '---'
                 print(msg, flush=True)
                 del self._lines[job]
