@@ -10,6 +10,7 @@ from colcon_core.event.test import TestFailure
 from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.event_handler import format_duration
 from colcon_core.event_reactor import EventReactorShutdown
+from colcon_core.output_style import Style
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.subprocess import SIGINT_RESULT
 
@@ -89,37 +90,39 @@ class SummaryHandler(EventHandlerExtensionPoint):
         blocked -= ended
 
         count, job_type, _ = _msg_arguments(ended - interrupted - failed)
-        print('Summary: {count} {job_type} finished '
-              '[{duration_string}]'.format_map(locals()))
+        summary_prefix = (Style.Strong + Style.Warning)('Summary:')
+        duration_str = Style.Measurement(duration_string)
+        print(f'{summary_prefix} {count} {job_type} finished '
+              f'[{duration_str}]')
 
         if failed:
             count, job_type, names = _msg_arguments(failed)
-            print('  {count} {job_type} failed: {names}'
-                  .format_map(locals()))
+            failed_str = Style.Error(f'  {count} {job_type} failed: ')
+            print(f'{failed_str}{names}')
 
         if interrupted:
             count, job_type, names = _msg_arguments(interrupted)
-            print('  {count} {job_type} aborted: {names}'
-                  .format_map(locals()))
+            aborted_str = Style.Warning(f'  {count} {job_type} aborted: ')
+            print(f'{aborted_str}{names}')
 
         if with_stderr:
             count, job_type, names = _msg_arguments(with_stderr)
-            print(
-                '  {count} {job_type} had stderr output: {names}'
-                .format_map(locals()))
+            stderr_str = Style.Warning(
+                f'  {count} {job_type} had stderr output: ')
+            print(f'{stderr_str}{names}')
 
         if with_test_failures:
             count, job_type, names = _msg_arguments(with_test_failures)
-            print(
-                '  {count} {job_type} had test failures: {names}'
-                .format_map(locals()))
+            failures_str = Style.Error(
+                f'  {count} {job_type} had test failures: ')
+            print(f'{failures_str}{names}')
 
         if blocked:
             count = len(blocked)
             job_type = get_job_type_word_form(count)
-            print(
+            print(Style.Weak(
                 '  {count} {job_type} not processed'
-                .format_map(locals()))
+                .format_map(locals())))
 
 
 def _msg_arguments(packages):
